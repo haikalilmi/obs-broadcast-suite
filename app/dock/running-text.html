@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Text Dock</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        textarea { width: 100%; height: 60px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: white; padding: 8px; resize: vertical; }
+        .row { display: flex; gap: 8px; align-items: center; }
+        .row label { flex: 1; font-size: 13px; }
+        .half { display: flex; gap: 8px; }
+        .half .button { flex: 1; }
+        .btn-hide { background: var(--danger); }
+        select { height: 38px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: white; padding: 0 8px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header><h1>Running Text</h1><div><span id="status"></span><span id="conn-status" class="status-badge inactive">●</span></div></header>
+        <label>Text</label>
+        <textarea id="text">Selamat Datang</textarea>
+        <div class="row">
+            <label><input type="checkbox" id="showLogo"> Show Logo</label>
+            <label><input type="checkbox" id="showClock"> Show Clock</label>
+        </div>
+        <div class="row">
+            <label>Speed</label>
+            <input type="range" id="speed" min="20" max="200" value="80" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>Font Size</label>
+            <input type="range" id="fontSize" min="16" max="48" value="28" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>Padding</label>
+            <input type="range" id="padding" min="4" max="40" value="14" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>BG Opacity</label>
+            <input type="range" id="bgOpacity" min="0" max="100" value="92" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>Tema</label>
+            <input type="color" id="strokeColor" value="#0078d4" class="input" style="height:38px;padding:2px">
+        </div>
+        <div class="row">
+            <label>Text Color</label>
+            <input type="color" id="textColor" value="#ffffff" class="input" style="height:38px;padding:2px">
+        </div>
+        <div class="half">
+            <button class="button" onclick="showRT()">SHOW</button>
+            <button class="button btn-hide" onclick="hideRT()">HIDE</button>
+        </div>
+    </div>
+    <script src="js/websocket.js"></script>
+    <script>
+        const socket = new BroadcastSocket();
+        window.socket = socket;
+        const bc = new BroadcastChannel('obs-broadcast');
+
+        socket.on('connection', (d) => {
+            document.getElementById('conn-status').className = 'status-badge ' + (d.status === 'connected' ? 'active' : 'inactive');
+        });
+
+        function send() {
+            const data = {
+                text: document.getElementById('text').value,
+                showLogo: document.getElementById('showLogo').checked,
+                showClock: document.getElementById('showClock').checked,
+                speed: parseInt(document.getElementById('speed').value),
+                fontSize: parseInt(document.getElementById('fontSize').value),
+                padding: parseInt(document.getElementById('padding').value),
+                bgOpacity: parseInt(document.getElementById('bgOpacity').value),
+                strokeColor: document.getElementById('strokeColor').value,
+                textColor: document.getElementById('textColor').value
+            };
+            socket.send('runningtext.update', data);
+            bc.postMessage({ event: 'runningtext.update', data: data });
+        }
+
+        function showRT() {
+            socket.send('runningtext.show');
+            bc.postMessage({ event: 'runningtext.show' });
+        }
+        function hideRT() {
+            socket.send('runningtext.hide');
+            bc.postMessage({ event: 'runningtext.hide' });
+        }
+
+        document.getElementById('text').addEventListener('input', send);
+        document.getElementById('showLogo').addEventListener('change', send);
+        document.getElementById('showClock').addEventListener('change', send);
+        document.getElementById('speed').addEventListener('input', send);
+        document.getElementById('fontSize').addEventListener('input', send);
+        document.getElementById('padding').addEventListener('input', send);
+        document.getElementById('bgOpacity').addEventListener('input', send);
+        document.getElementById('strokeColor').addEventListener('input', send);
+        document.getElementById('textColor').addEventListener('input', send);
+
+        socket.on('status.update', (data) => {
+            document.getElementById('status').textContent = data.runningText ? '● ' : '';
+        });
+    </script>
+</body>
+</html>

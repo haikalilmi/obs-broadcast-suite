@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scene Switcher</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .scene-item {
+            height: 44px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; display: flex; align-items: center; padding: 0 12px;
+            cursor: pointer; margin-bottom: 4px; transition: all 0.15s;
+        }
+        .scene-item:hover { background: var(--primary); color: white; }
+        .scene-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header><h1>Scenes</h1><div><span id="active-label"></span><span id="conn-status" class="status-badge inactive">●</span></div></header>
+        <div id="scene-list"></div>
+    </div>
+    <script src="js/websocket.js"></script>
+    <script>
+        const socket = new BroadcastSocket();
+        window.socket = socket;
+        const list = document.getElementById('scene-list');
+
+        socket.on('connection', (d) => {
+            document.getElementById('conn-status').className = 'status-badge ' + (d.status === 'connected' ? 'active' : 'inactive');
+        });
+
+        socket.on('scene.list', (data) => {
+            list.innerHTML = '';
+            (data.scenes || []).forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'scene-item';
+                div.textContent = name;
+                div.onclick = () => socket.send('scene.change', { scene: name });
+                list.appendChild(div);
+            });
+        });
+
+        socket.on('scene.active', (data) => {
+            document.querySelectorAll('.scene-item').forEach(el => {
+                el.classList.toggle('active', el.textContent === data.scene);
+            });
+            document.getElementById('active-label').textContent = data.scene || '';
+        });
+
+        socket.send('scene.list');
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "Modern",
+  "colors": {
+    "primary": "#0078d4",
+    "background": "#202020",
+    "text": "#ffffff",
+    "border": "#333333"
+  },
+  "fonts": {
+    "main": "Segoe UI, sans-serif"
+  }
+}

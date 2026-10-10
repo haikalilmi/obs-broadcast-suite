@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body>
+    <div id="app">
+        <header><h1>Settings</h1><span id="conn-status" class="status-badge">Disconnected</span></header>
+
+        <label>Theme</label>
+        <select id="theme" class="input">
+            <option value="modern">Modern</option>
+            <option value="minimal">Minimal</option>
+            <option value="flat">Flat</option>
+            <option value="islamic">Islamic</option>
+        </select>
+
+        <label>Animation</label>
+        <div style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="animation" checked>
+            <span>Enable</span>
+        </div>
+
+        <label>WebSocket Port</label>
+        <input id="port" type="number" class="input" value="4455">
+
+        <label>Logo Path</label>
+        <input id="logoPath" class="input" placeholder="C:\path\to\logo.png">
+
+        <button class="button" onclick="saveConfig()" style="margin-top:4px">SAVE</button>
+        <button class="button" onclick="loadConfig()">LOAD</button>
+
+        <div style="font-size:12px;color:#999;margin-top:8px">
+            <div>Version: 1.0</div>
+            <div>OBS Broadcast Suite</div>
+        </div>
+    </div>
+    <script src="js/websocket.js"></script>
+    <script>
+        const socket = new BroadcastSocket();
+        window.socket = socket;
+
+        socket.on('connection', (data) => {
+            const el = document.getElementById('conn-status');
+            if (data.status === 'connected') {
+                el.textContent = 'Connected';
+                el.className = 'status-badge active';
+            } else {
+                el.textContent = 'Disconnected';
+                el.className = 'status-badge inactive';
+            }
+        });
+
+        socket.on('status.update', () => {});
+
+        function saveConfig() {
+            socket.send('config.save', {
+                theme: document.getElementById('theme').value,
+                animation: document.getElementById('animation').checked,
+                port: parseInt(document.getElementById('port').value),
+                logoPath: document.getElementById('logoPath').value
+            });
+        }
+
+        function loadConfig() {
+            socket.send('config.load');
+        }
+
+        socket.on('config.load', (data) => {
+            if (data.theme) document.getElementById('theme').value = data.theme;
+            if (data.animation !== undefined) document.getElementById('animation').checked = data.animation;
+            if (data.port) document.getElementById('port').value = data.port;
+            if (data.logoPath) document.getElementById('logoPath').value = data.logoPath;
+        });
+    </script>
+</body>
+</html>

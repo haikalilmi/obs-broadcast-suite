@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT Controller Dock</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .counter { text-align: center; font-size: 24px; margin: 12px 0; }
+        .btn-row { display: flex; gap: 8px; }
+        .btn-row .button { flex: 1; }
+        .btn-hide { background: var(--danger); }
+        .big { height: 56px; font-size: 18px; }
+        .input-path { width: 100%; font-size: 12px; }
+        .status { font-size: 12px; color: #888; text-align: center; margin: 4px 0; }
+        .status.converting { color: #ff9800; }
+        .status.done { color: #4caf50; }
+        .status.error { color: #d13438; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header><h1>PPT Controller</h1><span id="conn-status" class="status-badge inactive">●</span></header>
+        <label>File PPT</label>
+        <div class="btn-row" style="gap:4px">
+            <input id="pptPath" class="input input-path" placeholder="C:\path\to\presentasi.pptx" style="flex:1">
+            <button class="button" style="flex:0;padding:0 12px;font-size:12px" onclick="browsePPT()">Browse</button>
+        </div>
+        <button class="button" onclick="convertPPT()" style="margin-top:4px">CONVERT TO PNG</button>
+        <div id="convertStatus" class="status">Belum ada slide</div>
+        <div class="counter" id="counter">0 / 0</div>
+        <div class="btn-row">
+            <button class="button" onclick="showPPT()">SHOW</button>
+            <button class="button btn-hide" onclick="hidePPT()">HIDE</button>
+        </div>
+        <div class="btn-row">
+            <button class="button big" onclick="prevPPT()">◀ PREV</button>
+            <button class="button big" onclick="nextPPT()">NEXT ▶</button>
+        </div>
+    </div>
+    <script src="js/websocket.js"></script>
+    <script>
+        const socket = new BroadcastSocket();
+        window.socket = socket;
+        const bc = new BroadcastChannel('obs-broadcast');
+        let slideData = { current: 0, total: 0 };
+
+        socket.on('connection', (d) => {
+            document.getElementById('conn-status').className = 'status-badge ' + (d.status === 'connected' ? 'active' : 'inactive');
+        });
+
+        function browsePPT() {
+            socket.send('ppt.browse');
+            bc.postMessage({ event: 'ppt.browse' });
+        }
+        socket.on('ppt.browse', function(data) {
+            if (data && data.path) document.getElementById('pptPath').value = data.path;
+        });
+        function pollPPTPath() {
+            fetch('../../data/ppt-path.txt').then(r => r.text()).then(t => {
+                if (t && t.length > 5) document.getElementById('pptPath').value = t;
+            }).catch(() => {});
+        }
+        setInterval(pollPPTPath, 1000);
+
+        function convertPPT() {
+            var path = document.getElementById('pptPath').value;
+            if (!path) return;
+            var st = document.getElementById('convertStatus');
+            st.textContent = 'Mengconvert...';
+            st.className = 'status converting';
+            socket.send('ppt.export', { path: path });
+            bc.postMessage({ event: 'ppt.export', data: { path: path } });
+        }
+
+        // Listen for export result from Lua via WebSocket
+        socket.on('ppt.export.done', function(data) {
+            var st = document.getElementById('convertStatus');
+            st.textContent = (data.total || 0) + ' slide siap';
+            st.className = 'status done';
+            slideData.total = data.total || 0;
+            slideData.current = 1;
+            document.getElementById('counter').textContent = '1 / ' + slideData.total;
+        });
+
+        socket.on('ppt.export.error', function(data) {
+            var st = document.getElementById('convertStatus');
+            st.textContent = 'Error: ' + (data.message || 'Gagal');
+            st.className = 'status error';
+        });
+
+        function showPPT() { socket.send('ppt.show'); bc.postMessage({ event: 'ppt.show' }); }
+        function hidePPT() { socket.send('ppt.hide'); bc.postMessage({ event: 'ppt.hide' }); }
+        function nextPPT() { socket.send('ppt.next'); bc.postMessage({ event: 'ppt.next' }); }
+        function prevPPT() { socket.send('ppt.previous'); bc.postMessage({ event: 'ppt.previous' }); }
+
+        socket.on('ppt.current', (data) => {
+            slideData = data;
+            document.getElementById('counter').textContent = (data.current || 0) + ' / ' + (data.total || 0);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "Islamic",
+  "colors": {
+    "primary": "#2e7d32",
+    "background": "#1b1b1b",
+    "text": "#f0e6d3",
+    "border": "#4a4a4a"
+  },
+  "fonts": {
+    "main": "Segoe UI, sans-serif"
+  }
+}

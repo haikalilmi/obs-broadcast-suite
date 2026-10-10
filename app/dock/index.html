@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Broadcast Suite</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+        .tab { padding: 8px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); cursor: pointer; font-size: 13px; }
+        .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .panel { display: none; flex-direction: column; gap: 10px; }
+        .panel.active { display: flex; }
+        .row { display: flex; gap: 8px; align-items: center; }
+        .row label { flex: 1; font-size: 13px; }
+        .half { display: flex; gap: 8px; }
+        .half .button { flex: 1; }
+        .btn-hide { background: var(--danger); }
+        textarea { width: 100%; height: 60px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: white; padding: 8px; resize: vertical; }
+        select { height: 38px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: white; padding: 0 8px; width: 100%; }
+        .counter { text-align: center; font-size: 24px; margin: 6px 0; }
+        .btn-row { display: flex; gap: 8px; }
+        .btn-row .button { flex: 1; }
+        .big { height: 56px; font-size: 18px; }
+        .input-path { width: 100%; font-size: 12px; }
+        .status { font-size: 12px; color: #888; text-align: center; margin: 2px 0; }
+        .status.converting { color: #ff9800; }
+        .status.done { color: #4caf50; }
+        .status.error { color: #d13438; }
+        .emergency-btn { height: 80px; font-size: 20px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; width: 100%; letter-spacing: 1px; }
+        .emergency-btn.enable { background: var(--danger); color: white; }
+        .emergency-btn.disable { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .warning-icon { font-size: 32px; text-align: center; margin-bottom: 8px; }
+        .sub { font-size: 12px; color: #999; text-align: center; }
+        .scene-item { height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; padding: 0 12px; cursor: pointer; margin-bottom: 4px; transition: all 0.15s; }
+        .scene-item:hover { background: var(--primary); color: white; }
+        .scene-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .cfg { font-size: 12px; color: #999; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>OBS Broadcast Suite</h1>
+            <span id="conn-status" class="status-badge inactive">●</span>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab active" data-target="running">Run Text</button>
+            <button class="tab" data-target="ppt">PPT</button>
+            <button class="tab" data-target="lower">Lower Third</button>
+            <button class="tab" data-target="emergency">Emergency</button>
+            <button class="tab" data-target="settings">Settings</button>
+        </nav>
+
+        <section id="running" class="panel active">
+            <div class="row"><h1 style="flex:1">Running Text</h1><span id="rt-status"></span></div>
+            <label>Text</label>
+            <textarea id="rtText">Selamat Datang</textarea>
+            <div class="row">
+                <label><input type="checkbox" id="rtShowLogo"> Show Logo</label>
+                <label><input type="checkbox" id="rtShowClock"> Show Clock</label>
+            </div>
+            <div class="row"><label>Speed</label><input type="range" id="rtSpeed" min="20" max="200" value="80" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>Font Size</label><input type="range" id="rtFontSize" min="16" max="48" value="28" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>Padding</label><input type="range" id="rtPadding" min="4" max="40" value="14" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>BG Opacity</label><input type="range" id="rtBgOpacity" min="0" max="100" value="92" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>Tema</label><input type="color" id="rtStrokeColor" value="#0078d4" class="input" style="height:38px;padding:2px"></div>
+            <div class="row"><label>Text Color</label><input type="color" id="rtTextColor" value="#ffffff" class="input" style="height:38px;padding:2px"></div>
+            <div class="half">
+                <button class="button" onclick="showRT()">SHOW</button>
+                <button class="button btn-hide" onclick="hideRT()">HIDE</button>
+            </div>
+        </section>
+
+        <section id="ppt" class="panel">
+            <div class="row"><h1 style="flex:1">PPT Controller</h1><span id="ppt-status"></span></div>
+            <label>File PPT</label>
+            <div class="btn-row" style="gap:4px">
+                <input id="pptPath" class="input input-path" placeholder="C:\path\to\presentasi.pptx" style="flex:1">
+                <button class="button" style="flex:0;padding:0 12px;font-size:12px" onclick="browsePPT()">Browse</button>
+            </div>
+            <button class="button" onclick="convertPPT()" style="margin-top:4px">CONVERT TO PNG</button>
+            <div id="convertStatus" class="status">Belum ada slide</div>
+            <div class="counter" id="counter">0 / 0</div>
+            <div class="btn-row">
+                <button class="button" onclick="showPPT()">SHOW</button>
+                <button class="button btn-hide" onclick="hidePPT()">HIDE</button>
+            </div>
+            <div class="btn-row">
+                <button class="button big" onclick="prevPPT()">◀ PREV</button>
+                <button class="button big" onclick="nextPPT()">NEXT ▶</button>
+            </div>
+        </section>
+
+        <section id="lower" class="panel">
+            <div class="row"><h1 style="flex:1">Lower Third</h1><span id="lt-status"></span></div>
+            <label>Nama</label>
+            <input id="ltName" class="input" placeholder="Nama pembicara">
+            <label>Nama Acara</label>
+            <input id="ltEvent" class="input" placeholder="Nama acara">
+            <div class="row"><label>Durasi (0 = manual)</label><input id="ltDuration" type="number" class="input" value="0" style="width:70px"></div>
+            <div class="row"><label>Font Size</label><input type="range" id="ltFontSize" min="16" max="48" value="28" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>Posisi X</label><input type="range" id="ltPosX" min="0" max="400" value="0" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>Posisi Y</label><input type="range" id="ltPosY" min="0" max="600" value="90" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>Padding</label><input type="range" id="ltPadding" min="0" max="40" value="14" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>BG Opacity</label><input type="range" id="ltBgOpacity" min="0" max="100" value="85" class="input" style="height:auto;padding:0"></div>
+            <div class="row"><label>Tema</label><input type="color" id="ltStrokeColor" value="#0078d4" class="input" style="height:38px;padding:2px"></div>
+            <div class="row"><label>Text Color</label><input type="color" id="ltTextColor" value="#ffffff" class="input" style="height:38px;padding:2px"></div>
+            <div class="half">
+                <button class="button" onclick="showLT()">SHOW</button>
+                <button class="button btn-hide" onclick="hideLT()">HIDE</button>
+            </div>
+        </section>
+
+        <section id="emergency" class="panel">
+            <div class="row"><h1 style="flex:1">Emergency</h1><span id="em-status" style="color:var(--danger)"></span></div>
+            <div class="warning-icon">⚠</div>
+            <button class="emergency-btn enable" onclick="enableEM()">AKTIFKAN</button>
+            <button class="emergency-btn disable" onclick="disableEM()" style="margin-top:8px">MATIKAN</button>
+            <div class="sub">Aktif = pindah ke scene Emergency</div>
+        </section>
+
+        <section id="settings" class="panel">
+            <h1>Settings</h1>
+            <label>Logo Path</label>
+            <input id="cfgLogoPath" class="input" placeholder="C:\path\to\logo.png">
+            <div class="half">
+                <button class="button" onclick="saveConfig()">SAVE</button>
+                <button class="button" onclick="loadConfig()">LOAD</button>
+            </div>
+            <div class="cfg"><div>Version: 1.0</div><div>OBS Broadcast Suite</div></div>
+        </section>
+    </div>
+
+    <script src="js/websocket.js"></script>
+    <script>
+        const socket = new BroadcastSocket();
+        window.socket = socket;
+        const bc = new BroadcastChannel('obs-broadcast');
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.add('active');
+            });
+        });
+
+        socket.on('connection', (d) => {
+            const el = document.getElementById('conn-status');
+            el.className = 'status-badge ' + (d.status === 'connected' ? 'active' : 'inactive');
+        });
+        socket.on('status.update', (data) => {
+            const rt = document.getElementById('rt-status');
+            const lt = document.getElementById('lt-status');
+            const em = document.getElementById('em-status');
+            if (rt) rt.textContent = data.runningText ? '●' : '';
+            if (lt) lt.textContent = data.lowerThird ? '●' : '';
+            if (em) em.textContent = data.emergency ? '● ACTIVE' : '';
+        });
+
+        /* ---------- Running Text ---------- */
+        function rtData() {
+            return {
+                text: document.getElementById('rtText').value,
+                showLogo: document.getElementById('rtShowLogo').checked,
+                showClock: document.getElementById('rtShowClock').checked,
+                speed: parseInt(document.getElementById('rtSpeed').value),
+                fontSize: parseInt(document.getElementById('rtFontSize').value),
+                padding: parseInt(document.getElementById('rtPadding').value),
+                bgOpacity: parseInt(document.getElementById('rtBgOpacity').value),
+                strokeColor: document.getElementById('rtStrokeColor').value,
+                textColor: document.getElementById('rtTextColor').value,
+                logoPath: document.getElementById('cfgLogoPath').value
+            };
+        }
+        function rtSend() {
+            const data = rtData();
+            socket.send('runningtext.update', data);
+            bc.postMessage({ event: 'runningtext.update', data: data });
+        }
+        function showRT() { socket.send('runningtext.show'); bc.postMessage({ event: 'runningtext.show' }); }
+        function hideRT() { socket.send('runningtext.hide'); bc.postMessage({ event: 'runningtext.hide' }); }
+        ['rtText','rtShowLogo','rtShowClock','rtSpeed','rtFontSize','rtPadding','rtBgOpacity','rtStrokeColor','rtTextColor'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', rtSend);
+            el.addEventListener('change', rtSend);
+        });
+
+        /* ---------- PPT ---------- */
+        function browsePPT() {
+            socket.send('ppt.browse');
+            bc.postMessage({ event: 'ppt.browse' });
+        }
+        socket.on('ppt.browse', (data) => { if (data && data.path) document.getElementById('pptPath').value = data.path; });
+
+        function convertPPT() {
+            const path = document.getElementById('pptPath').value;
+            if (!path) return;
+            const st = document.getElementById('convertStatus');
+            st.textContent = 'Mengconvert...';
+            st.className = 'status converting';
+            socket.send('ppt.export', { path: path });
+            bc.postMessage({ event: 'ppt.export', data: { path: path } });
+        }
+        socket.on('ppt.export.done', (data) => {
+            const st = document.getElementById('convertStatus');
+            st.textContent = (data.total || 0) + ' slide siap';
+            st.className = 'status done';
+            document.getElementById('counter').textContent = '1 / ' + (data.total || 0);
+        });
+        socket.on('ppt.export.error', (data) => {
+            const st = document.getElementById('convertStatus');
+            st.textContent = 'Error: ' + (data.message || 'Gagal');
+            st.className = 'status error';
+        });
+        function showPPT() { socket.send('ppt.show'); bc.postMessage({ event: 'ppt.show' }); }
+        function hidePPT() { socket.send('ppt.hide'); bc.postMessage({ event: 'ppt.hide' }); }
+        function nextPPT() { socket.send('ppt.next'); bc.postMessage({ event: 'ppt.next' }); }
+        function prevPPT() { socket.send('ppt.previous'); bc.postMessage({ event: 'ppt.previous' }); }
+        socket.on('ppt.current', (data) => {
+            document.getElementById('counter').textContent = (data.current || 0) + ' / ' + (data.total || 0);
+        });
+
+        /* ---------- Lower Third ---------- */
+        function ltData() {
+            return {
+                name: document.getElementById('ltName').value,
+                eventName: document.getElementById('ltEvent').value,
+                duration: parseInt(document.getElementById('ltDuration').value) || 0,
+                fontSize: parseInt(document.getElementById('ltFontSize').value),
+                posX: parseInt(document.getElementById('ltPosX').value),
+                posY: parseInt(document.getElementById('ltPosY').value),
+                padding: parseInt(document.getElementById('ltPadding').value),
+                bgOpacity: parseInt(document.getElementById('ltBgOpacity').value),
+                strokeColor: document.getElementById('ltStrokeColor').value,
+                textColor: document.getElementById('ltTextColor').value
+            };
+        }
+        function showLT() {
+            const data = ltData();
+            socket.send('lowerthird.show', data);
+            bc.postMessage({ event: 'lowerthird.show', data: data });
+        }
+        function hideLT() {
+            socket.send('lowerthird.hide');
+            bc.postMessage({ event: 'lowerthird.hide' });
+        }
+
+        /* ---------- Emergency ---------- */
+        function enableEM() { socket.send('emergency.enable'); bc.postMessage({ event: 'emergency.enable' }); }
+        function disableEM() { socket.send('emergency.disable'); bc.postMessage({ event: 'emergency.disable' }); }
+
+        /* ---------- Settings ---------- */
+        function saveConfig() { socket.send('config.save', { logoPath: document.getElementById('cfgLogoPath').value }); }
+        function loadConfig() { socket.send('config.load'); }
+        socket.on('config.load', (data) => {
+            if (data.logoPath) document.getElementById('cfgLogoPath').value = data.logoPath;
+        });
+    </script>
+</body>
+</html>

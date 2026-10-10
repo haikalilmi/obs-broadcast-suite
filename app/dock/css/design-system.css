@@ -1,0 +1,20 @@
+/* dock/css/design-system.css - UI component styles following UI_GUIDELINE.md */
+:root { --primary: #0078d4; --background: #1e1e1e; --surface: #2d2d2d; --text: #e1e1e1; --border: #3e3e3e; --danger: #d13438; --success: #4caf50; --warning: #ff9800; }
+
+body { margin: 0; padding: 12px; background: var(--background); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; user-select: none; }
+#app { display: flex; flex-direction: column; gap: 12px; min-width: 320px; max-width: 420px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+h1 { font-size: 16px; margin: 0; font-weight: 600; }
+label { font-size: 13px; color: var(--text); }
+.button { height: 40px; border: none; border-radius: 8px; background: var(--primary); color: white; font-size: 14px; font-weight: 600; cursor: pointer; padding: 0 16px; transition: opacity 0.15s; }
+.button:hover { opacity: 0.9; }
+.button:active { opacity: 0.8; }
+.input { height: 38px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: white; padding: 0 12px; font-size: 13px; outline: none; }
+.input:focus { border-color: var(--primary); }
+select.input { appearance: auto; }
+[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; vertical-align: middle; margin-right: 6px; }
+[type="range"] { width: 100%; accent-color: var(--primary); height: 4px; }
+textarea.input { height: 60px; padding: 8px; resize: vertical; font-family: inherit; }
+.status-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+.status-badge.active { background: var(--success); color: white; }
+.status-badge.inactive { background: var(--border); color: #999; }

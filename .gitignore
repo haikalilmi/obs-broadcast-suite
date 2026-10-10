@@ -1,0 +1,11 @@
+# Runtime - jangan dicommit
+app/data/server.log
+app/data/command.json
+app/data/response.json
+app/data/status.json
+app/data/ppt-path.txt
+app/data/ppt-cache/
+data/ppt-cache/
+*.log
+.DS_Store
+Thumbs.db

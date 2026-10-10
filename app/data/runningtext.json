@@ -1,0 +1,11 @@
+{
+  "text": "Selamat Datang",
+  "showClock": false,
+  "showLogo": false,
+  "speed": 80,
+  "fontSize": 28,
+  "padding": 14,
+  "bgOpacity": 92,
+  "strokeColor": "#0078d4",
+  "textColor": "#ffffff"
+}

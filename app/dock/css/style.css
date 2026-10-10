@@ -1,0 +1,54 @@
+:root {
+    --primary: #0078d4;
+    --background: #1e1e1e;
+    --surface: #2d2d2d;
+    --text: #e1e1e1;
+    --border: #3e3e3e;
+    --danger: #d13438;
+}
+
+body {
+    margin: 0;
+    padding: 12px;
+    background-color: var(--background);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    user-select: none;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    font-size: 16px;
+    margin: 0;
+}
+
+.button {
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+}
+
+.input {
+    height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: white;
+    padding: 0 12px;
+}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Running Text</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; overflow: hidden; font-family: 'Franklin Gothic Medium', 'Arial Unicode MS', 'Segoe UI', Arial, sans-serif; }
+        #container { position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center; overflow: hidden; }
+        #left { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-left: 24px; z-index: 1; }
+        #logo { height: 36px; width: auto; display: none; }
+        #clock { font-size: 17px; display: none; font-variant-numeric: tabular-nums; font-weight: 600; color: #fff; }
+        #sep { font-size: 20px; color: #666; display: none; margin: 0 4px; }
+        #wrap { flex: 1; overflow: hidden; }
+        #track { display: flex; white-space: nowrap; will-change: transform; }
+        #track .item { font-weight: 600; color: #fff; white-space: nowrap; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="left">
+            <img id="logo" src="" alt="Logo">
+            <span id="clock"></span>
+            <span id="sep">|</span>
+        </div>
+        <div id="wrap"><div id="track">
+            <span class="item" id="t1"></span>
+            <span class="item" id="t2"></span>
+        </div></div>
+    </div>
+    <script>
+        const container = document.getElementById('container');
+        const track = document.getElementById('track');
+        const logo = document.getElementById('logo');
+        const clock = document.getElementById('clock');
+        const sep = document.getElementById('sep');
+        let visible = true, data = {};
+        let timer = null;
+
+        function period() {
+            const first = track.firstElementChild;
+            return first ? first.offsetWidth : 0;
+        }
+
+        function loop() {
+            const p = period();
+            if (p <= 0) { timer = setTimeout(loop, 100); return; }
+            const pxPerMs = (data.speed || 80) / 600;
+            const dur = p / pxPerMs;
+
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0)';
+            track.offsetHeight;
+            track.style.transition = 'transform ' + dur + 'ms linear';
+            track.style.transform = 'translateX(-' + p + 'px)';
+            timer = setTimeout(loop, dur + 20);
+        }
+
+        function rebuild() {
+            const txt = data.text || 'Selamat Datang';
+            const color = data.textColor || '#fff';
+            const wrapW = wrap.offsetWidth || 1;
+            track.innerHTML = '';
+
+            const s = document.createElement('span');
+            s.className = 'item';
+            s.textContent = txt + '\u00A0';
+            s.style.color = color;
+            track.appendChild(s);
+            const p = s.offsetWidth || 1;
+
+            let total = p, guard = 0;
+            while (total < wrapW + p) {
+                const c = document.createElement('span');
+                c.className = 'item';
+                c.textContent = txt + '\u00A0';
+                c.style.color = color;
+                track.appendChild(c);
+                total += p;
+                if (++guard > 1000) break;
+            }
+        }
+
+        function apply() {
+            container.classList.toggle('hidden', !visible);
+            if (!visible) { if (timer) { clearTimeout(timer); timer = null; } return; }
+
+            const fs = (data.fontSize || 28) + 'px';
+            track.style.fontSize = fs;
+            clock.style.fontSize = fs;
+
+            logo.style.display = data.showLogo ? 'block' : 'none';
+            if (data.showLogo) {
+                logo.onerror = () => { console.warn('logo gagal load /logo - cek settings.json logoPath dan app/data/server.log'); logo.style.display = 'none'; };
+                logo.onload = () => { logo.style.display = 'block'; };
+                logo.src = '/logo?t=' + Date.now();
+            }
+            clock.style.display = data.showClock ? 'inline' : 'none';
+            sep.style.display = data.showClock ? 'inline' : 'none';
+
+            const pad = (data.padding || 14) + 'px';
+            container.style.paddingTop = pad;
+            container.style.paddingBottom = pad;
+
+            const alpha = Math.min(1, Math.max(0, (data.bgOpacity || 92) / 100));
+            const stroke = data.strokeColor || '#0078d4';
+            container.style.background = 'rgba(30,30,30,' + alpha + ')';
+            container.style.borderBottom = '3px solid ' + stroke;
+
+            rebuild();
+
+            if (timer) { clearTimeout(timer); timer = null; }
+            loop();
+        }
+
+        const bc = new BroadcastChannel('obs-broadcast');
+        bc.onmessage = (e) => {
+            const msg = e.data;
+            if (msg.event === 'runningtext.show') { visible = true; apply(); }
+            if (msg.event === 'runningtext.hide') { visible = false; apply(); }
+            if (msg.event === 'runningtext.update') { data = msg.data || {}; apply(); }
+        };
+
+        setTimeout(apply, 200);
+        setInterval(() => { if (data.showClock) clock.textContent = new Date().toLocaleTimeString(); }, 1000);
+        window.addEventListener('resize', () => { if (visible) apply(); });
+    </script>
+</body>
+</html>

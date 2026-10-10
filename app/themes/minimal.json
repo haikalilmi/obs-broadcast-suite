@@ -1,0 +1,12 @@
+{
+  "name": "Minimal",
+  "colors": {
+    "primary": "#607d8b",
+    "background": "#212121",
+    "text": "#ffffff",
+    "border": "#424242"
+  },
+  "fonts": {
+    "main": "Segoe UI, sans-serif"
+  }
+}

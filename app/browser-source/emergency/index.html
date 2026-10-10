@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Emergency</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; height: 100vh; width: 100vw; overflow: hidden; background: #000; }
+        .hidden { display: none !important; }
+        #screen {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at center, #1a1a1a 0%, #000 100%);
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; opacity: 1; transition: opacity 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #bars {
+            width: 80vw; max-width: 900px; height: 60px; border-radius: 4px; margin-bottom: 40px;
+            background: repeating-linear-gradient(90deg,
+                #fff 0px, #fff 20px, #c0c0c0 20px, #c0c0c0 40px,
+                #808080 40px, #808080 60px, #404040 60px, #404040 80px,
+                #000 80px, #000 100px);
+        }
+
+        #content { text-align: center; }
+        #icon { font-size: 48px; color: #d13438; margin-bottom: 16px; }
+        #message { font-size: 52px; font-weight: 700; color: #d13438; letter-spacing: 3px; }
+        #submessage { font-size: 20px; color: #888; margin-top: 12px; letter-spacing: 1px; }
+        #divider { width: 100px; height: 2px; background: #d13438; margin: 24px auto; opacity: 0.5; }
+        #footer { position: absolute; bottom: 30px; font-size: 12px; color: #444; letter-spacing: 2px; text-transform: uppercase; }
+        #tech { position: absolute; top: 16px; right: 24px; font-size: 11px; color: #333; letter-spacing: 1px; }
+
+        #scanlines {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none; z-index: 1;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+        }
+    </style>
+</head>
+<body>
+    <div id="screen" class="hidden">
+        <div id="scanlines"></div>
+        <div id="tech">OFF AIR</div>
+        <div id="bars"></div>
+        <div id="content">
+            <div id="icon">⚠</div>
+            <div id="message">Mohon Maaf</div>
+            <div id="divider"></div>
+            <div id="submessage">Sedang Terjadi Gangguan Teknis<br>Kami akan kembali dalam beberapa saat</div>
+        </div>
+        <div id="footer">OBS Broadcast Suite &mdash; Emergency Mode</div>
+    </div>
+    <script>
+        const screen = document.getElementById('screen');
+        let hideTimer = null;
+
+        function showScreen() {
+            if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+            screen.classList.remove('hidden');
+            screen.style.transition = 'none';
+            screen.style.opacity = '0';
+            screen.offsetHeight;
+            screen.style.transition = 'opacity 0.3s ease';
+            screen.style.opacity = '1';
+        }
+
+        function hideScreen() {
+            if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+            screen.style.transition = 'opacity 0.3s ease';
+            screen.style.opacity = '0';
+            hideTimer = setTimeout(function() {
+                screen.classList.add('hidden');
+                hideTimer = null;
+            }, 320);
+        }
+
+        const bc = new BroadcastChannel('obs-broadcast');
+        bc.onmessage = (e) => {
+            const m = e.data;
+            if (m.event === 'emergency.enable') showScreen();
+            if (m.event === 'emergency.disable') hideScreen();
+        };
+        function poll() {
+            fetch('../../data/status.json').then(r => r.text()).then(t => {
+                try { const s = JSON.parse(t); if (s.emergency) showScreen(); else if (!document.querySelector('#screen.hidden')) hideScreen(); } catch(e) {}
+            }).catch(() => {});
+        }
+        setInterval(poll, 500);
+    </script>
+</body>
+</html>

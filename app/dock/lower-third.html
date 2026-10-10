@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lower Third Dock</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .row { display: flex; gap: 8px; align-items: center; }
+        .row label { flex: 1; font-size: 13px; }
+        .half { display: flex; gap: 8px; }
+        .half .button { flex: 1; }
+        .btn-hide { background: var(--danger); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header><h1>Lower Third</h1><div><span id="status"></span><span id="conn-status" class="status-badge inactive">●</span></div></header>
+        <label>Nama</label>
+        <input id="name" class="input" placeholder="Nama pembicara">
+        <label>Nama Acara</label>
+        <input id="eventName" class="input" placeholder="Nama acara">
+        <div class="row">
+            <label>Durasi (0 = manual)</label>
+            <input id="duration" type="number" class="input" value="0" style="width:70px">
+        </div>
+        <div class="row">
+            <label>Font Size</label>
+            <input type="range" id="fontSize" min="16" max="48" value="28" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>Posisi X</label>
+            <input type="range" id="posX" min="10" max="400" value="50" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>Posisi Y</label>
+            <input type="range" id="posY" min="20" max="600" value="90" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>BG Opacity</label>
+            <input type="range" id="bgOpacity" min="0" max="100" value="85" class="input" style="height:auto;padding:0">
+        </div>
+        <div class="row">
+            <label>Tema</label>
+            <input type="color" id="strokeColor" value="#0078d4" class="input" style="height:38px;padding:2px">
+        </div>
+        <div class="row">
+            <label>Text Color</label>
+            <input type="color" id="textColor" value="#ffffff" class="input" style="height:38px;padding:2px">
+        </div>
+        <div class="half">
+            <button class="button" onclick="showLT()">SHOW</button>
+            <button class="button btn-hide" onclick="hideLT()">HIDE</button>
+        </div>
+    </div>
+    <script src="js/websocket.js"></script>
+    <script>
+        const socket = new BroadcastSocket();
+        window.socket = socket;
+        const bc = new BroadcastChannel('obs-broadcast');
+
+        socket.on('connection', (d) => {
+            document.getElementById('conn-status').className = 'status-badge ' + (d.status === 'connected' ? 'active' : 'inactive');
+        });
+
+        function getData() {
+            return {
+                name: document.getElementById('name').value,
+                eventName: document.getElementById('eventName').value,
+                duration: parseInt(document.getElementById('duration').value) || 0,
+                fontSize: parseInt(document.getElementById('fontSize').value),
+                posX: parseInt(document.getElementById('posX').value),
+                posY: parseInt(document.getElementById('posY').value),
+                bgOpacity: parseInt(document.getElementById('bgOpacity').value),
+                strokeColor: document.getElementById('strokeColor').value,
+                textColor: document.getElementById('textColor').value
+            };
+        }
+
+        function showLT() {
+            const data = getData();
+            socket.send('lowerthird.show', data);
+            bc.postMessage({ event: 'lowerthird.show', data: data });
+        }
+        function hideLT() {
+            socket.send('lowerthird.hide');
+            bc.postMessage({ event: 'lowerthird.hide' });
+        }
+
+        socket.on('status.update', (data) => {
+            document.getElementById('status').textContent = data.lowerThird ? '● ' : '';
+        });
+    </script>
+</body>
+</html>

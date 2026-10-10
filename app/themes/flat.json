@@ -1,0 +1,12 @@
+{
+  "name": "Flat",
+  "colors": {
+    "primary": "#2980b9",
+    "background": "#2c3e50",
+    "text": "#ecf0f1",
+    "border": "#7f8c8d"
+  },
+  "fonts": {
+    "main": "Segoe UI, sans-serif"
+  }
+}

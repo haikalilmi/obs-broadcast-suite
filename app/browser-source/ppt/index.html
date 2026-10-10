@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PPT Overlay</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: transparent; overflow: hidden; 
+            font-family: 'Segoe UI', sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            height: 100vh;
+        }
+        #slide {
+            max-width: 90vw; max-height: 85vh;
+            object-fit: contain; border-radius: 8px;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <img id="slide" class="hidden" alt="Slide">
+    <script>
+        const slide = document.getElementById('slide');
+        let current = 1, total = 1;
+
+        function loadSlide(dir) {
+            slide.style.animation = dir ? 'slideIn 0.25s ease' : 'fadeIn 0.25s ease';
+            slide.src = '../../data/ppt-cache/' + current + '.png';
+            slide.classList.remove('hidden');
+        }
+        function previewSlide(dir) {
+            if (slide.classList.contains('hidden')) return;
+            loadSlide(dir);
+        }
+
+        const bc = new BroadcastChannel('obs-broadcast');
+        bc.onmessage = (e) => {
+            const m = e.data;
+            if (m.event === 'ppt.show') { loadSlide(); }
+            if (m.event === 'ppt.hide') { slide.classList.add('hidden'); }
+            if (m.event === 'ppt.next') { current = Math.min(current + 1, total); previewSlide('next'); }
+            if (m.event === 'ppt.previous') { current = Math.max(current - 1, 1); previewSlide('prev'); }
+            if (m.event === 'ppt.export.done') { total = m.data.total || 1; current = 1; loadSlide(); }
+        };
+
+        function pollFile() {
+            fetch('../../data/ppt.json').then(r => r.text()).then(t => {
+                try { const d = JSON.parse(t); current = d.current || 1; total = d.total || 1; } catch(e) {}
+            }).catch(() => {});
+        }
+        setInterval(pollFile, 1000);
+    </script>
+</body>
+</html>

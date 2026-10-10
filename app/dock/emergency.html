@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Dock</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        .emergency-btn { height: 80px; font-size: 20px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; width: 100%; letter-spacing: 1px; }
+        .enable { background: var(--danger); color: white; }
+        .disable { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .warning-icon { font-size: 32px; text-align: center; margin-bottom: 8px; }
+        .sub { font-size: 12px; color: #999; text-align: center; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header><h1>Emergency</h1><div><span id="status" style="color:var(--danger)"></span><span id="conn-status" class="status-badge inactive">●</span></div></header>
+        <div class="warning-icon">⚠</div>
+        <button class="emergency-btn enable" onclick="enableEM()">AKTIFKAN</button>
+        <button class="emergency-btn disable" onclick="disableEM()" style="margin-top:8px">MATIKAN</button>
+        <div class="sub">Aktif = pindah ke scene Emergency</div>
+    </div>
+    <script src="js/websocket.js"></script>
+    <script>
+        const socket = new BroadcastSocket();
+        window.socket = socket;
+        const bc = new BroadcastChannel('obs-broadcast');
+
+        socket.on('connection', (d) => {
+            document.getElementById('conn-status').className = 'status-badge ' + (d.status === 'connected' ? 'active' : 'inactive');
+        });
+
+        function enableEM() {
+            socket.send('emergency.enable');
+            bc.postMessage({ event: 'emergency.enable' });
+        }
+        function disableEM() {
+            socket.send('emergency.disable');
+            bc.postMessage({ event: 'emergency.disable' });
+        }
+
+        socket.on('status.update', (data) => {
+            document.getElementById('status').textContent = data.emergency ? '● ACTIVE' : '';
+        });
+    </script>
+</body>
+</html>
